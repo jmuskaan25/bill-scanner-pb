@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Pronto Travel</title>
+  <link rel="stylesheet" href="styles.css?v=5">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🚕</text></svg>">
+</head>
+<body>
+
+  <!-- Sign-In Wall (inline styles ensure it shows before CSS loads) -->
+  <div id="signInWall" class="signin-wall" style="display:flex; position:fixed; inset:0; z-index:9999; background:#f9fafb; align-items:center; justify-content:center;">
+    <div class="signin-card">
+      <span class="signin-logo">🚕</span>
+      <h1>Pronto Travel</h1>
+      <p class="subtitle">Sign in to submit and track your cab expenses</p>
+      <button class="google-btn" id="wallSignInBtn">
+        <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" width="20" alt="Google">
+        Continue with Google
+      </button>
+      <div style="margin-top: 20px;">
+        <button type="button" id="adminToggleBtn" class="admin-toggle-btn">Sign in as Admin</button>
+        <div id="adminPasswordField" style="display:none; margin-top: 12px;">
+          <input type="password" id="adminPasswordInput" placeholder="Enter admin password" class="admin-password-input">
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Header -->
+  <header class="header">
+    <div class="header-content">
+      <span class="header-logo">🚕</span>
+      <div>
+        <div class="header-title">Pronto Travel</div>
+        <div class="header-subtitle">Cab expense portal</div>
+      </div>
+      <div class="header-actions">
+        <a href="submissions.html" class="btn-submissions">📊 View Submissions</a>
+        <a href="manage.html" class="btn-submissions" id="manageLink" style="display:none; background:#111827;">🔧 Manage</a>
+        <div id="signedInView" style="display:none;" class="profile-menu-wrapper">
+          <img id="userAvatar" src="" alt="" class="profile-avatar">
+          <div id="profileDropdown" class="profile-dropdown" style="display:none;">
+            <div class="profile-dropdown-header">
+              <img id="userAvatarLarge" src="" alt="" class="profile-avatar-large">
+              <div>
+                <div class="profile-dropdown-name" id="userName"></div>
+                <div class="profile-dropdown-email" id="userEmail"></div>
+              </div>
+            </div>
+            <hr class="profile-dropdown-divider">
+            <button class="profile-dropdown-signout" id="signOutLink">Sign out</button>
+          </div>
+        </div>
+        <div id="signedOutView" style="display:none;"></div>
+      </div>
+    </div>
+  </header>
+
+  <div class="container">
+    <!-- Step 1: Upload zone (full width) -->
+    <div id="uploadZoneSection">
+      <div class="upload-hero" id="uploadZone">
+        <input type="file" id="fileInput" accept="image/jpeg,image/png,image/webp,application/pdf" hidden>
+        <div id="uploadIdleState">
+          <span class="upload-hero-icon">📄</span>
+          <h2>Upload your cab receipt</h2>
+          <p>Drag and drop or <span class="upload-link">browse files</span></p>
+          <p class="upload-hint">Supports Uber, Rapido, Ola · JPG, PNG, PDF</p>
+        </div>
+        <div id="uploadScanningState" style="display:none;">
+          <div class="scan-spinner"></div>
+          <p class="scan-text">Reading your receipt...</p>
+          <p class="scan-subtext" id="scanFileName"></p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Step 2: Confirm card (hidden, slides up after scan) -->
+    <div id="confirmCard" class="confirm-card" style="display:none;">
+      <!-- Header row: provider + amount -->
+      <div class="confirm-header">
+        <div>
+          <div class="confirm-provider" id="confirmProvider">Uber</div>
+          <div class="confirm-date" id="confirmDate"></div>
+        </div>
+        <div class="confirm-amount" id="confirmAmount">₹0.00</div>
+      </div>
+
+      <!-- Route -->
+      <div class="confirm-route">
+        <div class="route-point pickup">
+          <span class="route-dot pickup-dot"></span>
+          <span id="confirmPickup" class="route-addr">-</span>
+        </div>
+        <div class="route-line"></div>
+        <div class="route-point drop">
+          <span class="route-dot drop-dot"></span>
+          <span id="confirmDrop" class="route-addr">-</span>
+        </div>
+      </div>
+
+      <!-- Details grid (read-only) -->
+      <div class="confirm-details" id="confirmDetailsView">
+        <div class="detail-item"><span class="detail-label">Ride ID</span><span class="detail-value" id="dRideId">-</span></div>
+        <div class="detail-item"><span class="detail-label">Rider</span><span class="detail-value" id="dRiderName">-</span></div>
+        <div class="detail-item"><span class="detail-label">Driver</span><span class="detail-value" id="dDriverName">-</span></div>
+        <div class="detail-item"><span class="detail-label">Vehicle</span><span class="detail-value" id="dVehicle">-</span></div>
+        <div class="detail-item"><span class="detail-label">Payment</span><span class="detail-value" id="dPayment">-</span></div>
+        <div class="detail-item"><span class="detail-label">Currency</span><span class="detail-value" id="dCurrency">-</span></div>
+      </div>
+
+      <!-- Purpose field (always visible) -->
+      <div class="confirm-purpose">
+        <label for="confirmPurposeInput">Purpose / Notes</label>
+        <input type="text" id="confirmPurposeInput" placeholder="What was this ride for? (optional)">
+      </div>
+
+      <!-- Edit form (hidden by default) -->
+      <div id="editForm" style="display:none;" class="edit-form">
+        <div class="form-row">
+          <div class="form-group">
+            <label>Provider</label>
+            <select id="formProvider">
+              <option value="Uber">Uber</option>
+              <option value="Rapido">Rapido</option>
+              <option value="Ola">Ola</option>
+              <option value="Auto">Auto</option>
+              <option value="Other">Other</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Ride ID</label>
+            <input type="text" id="formRideId" placeholder="Booking/Trip ID">
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Rider Name</label>
+            <input type="text" id="formRiderName">
+          </div>
+          <div class="form-group">
+            <label>Driver Name</label>
+            <input type="text" id="formDriverName">
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Vehicle Number</label>
+          <input type="text" id="formVehicleNumber">
+        </div>
+        <div class="form-group">
+          <label>Pickup</label>
+          <input type="text" id="formPickup">
+        </div>
+        <div class="form-group">
+          <label>Drop</label>
+          <input type="text" id="formDrop">
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Date</label>
+            <input type="date" id="formDate">
+          </div>
+          <div class="form-group">
+            <label>Amount *</label>
+            <input type="number" id="formAmount" step="0.01">
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Currency</label>
+            <select id="formCurrency">
+              <option value="INR">INR</option>
+              <option value="USD">USD</option>
+              <option value="EUR">EUR</option>
+              <option value="GBP">GBP</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Payment Method</label>
+            <select id="formPaymentMethod">
+              <option value="cash">Cash</option>
+              <option value="upi">UPI</option>
+              <option value="card">Card</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <!-- Actions -->
+      <div class="confirm-actions">
+        <button class="btn-confirm" id="confirmSubmitBtn">Confirm & Submit →</button>
+        <button class="btn-edit-toggle" id="editToggleBtn">Edit details</button>
+        <button class="btn-cancel" id="cancelBtn">Upload different receipt</button>
+      </div>
+
+      <!-- Submit loading overlay -->
+      <div class="loading-overlay card-relative" id="submitLoading" style="display:none;">
+        <div class="scan-spinner small"></div>
+        <p>Submitting...</p>
+      </div>
+    </div>
+
+    <!-- Step 3: Success -->
+    <div id="successSection" style="display:none;" class="success-section">
+      <div class="success-icon">🎉</div>
+      <h2>Submitted!</h2>
+      <p id="successMsg">Your receipt has been submitted for reimbursement.</p>
+      <div class="success-actions">
+        <a href="submissions.html" class="btn-submissions">View your submission →</a>
+        <button class="btn-new" id="submitAnotherBtn">Submit another</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast-container" id="toastContainer"></div>
+
+  <script src="https://cdn.jsdelivr.net/npm/pocketbase@0.25.2/dist/pocketbase.umd.js"></script>
+  <script src="config.js"></script>
+  <script src="app.js"></script>
+
+</body>
+</html>

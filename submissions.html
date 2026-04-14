@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Submissions - Pronto Travel</title>
+  <link rel="stylesheet" href="styles.css?v=5">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🚕</text></svg>">
+</head>
+<body>
+
+  <!-- Sign-In Wall (inline styles ensure it shows before CSS loads) -->
+  <div id="signInWall" class="signin-wall" style="display:flex; position:fixed; inset:0; z-index:9999; background:#f9fafb; align-items:center; justify-content:center;">
+    <div class="signin-card">
+      <span class="signin-logo">🚕</span>
+      <h1>Pronto Travel</h1>
+      <p class="subtitle">Sign in to submit and track your cab expenses</p>
+      <button class="google-btn" id="wallSignInBtn">
+        <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" width="20" alt="Google">
+        Continue with Google
+      </button>
+    </div>
+  </div>
+
+  <!-- Header -->
+  <header class="header">
+    <div class="header-content">
+      <a href="index.html" class="btn-back">← Back</a>
+      <span class="header-logo">🚕</span>
+      <div>
+        <div class="header-title">My Submissions</div>
+        <div class="header-subtitle">Your cab reimbursements</div>
+      </div>
+      <div class="header-actions"></div>
+    </div>
+  </header>
+
+  <!-- Main Content -->
+  <div class="container">
+    <div class="card">
+      <div class="card-header">
+        <span class="icon">📊</span>
+        <h2>My Submissions</h2>
+      </div>
+      <div class="card-body" style="padding: 0;">
+        <div class="submissions-table-wrapper">
+          <table class="submissions-table" id="submissionsTable">
+            <thead>
+              <tr>
+                <th>Submitted On</th>
+                <th>Submitted By</th>
+                <th>Provider</th>
+                <th>Ride Date</th>
+                <th>From</th>
+                <th>To</th>
+                <th>Amount</th>
+              </tr>
+            </thead>
+            <tbody id="submissionsBody">
+              <tr>
+                <td colspan="7">
+                  <div class="empty-state">
+                    <span class="empty-icon">📭</span>
+                    <p>No submissions yet. Upload a cab receipt to get started!</p>
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Container -->
+  <div class="toast-container" id="toastContainer"></div>
+
+  <!-- Scripts -->
+  <script src="https://cdn.jsdelivr.net/npm/pocketbase@0.25.2/dist/pocketbase.umd.js"></script>
+  <script src="config.js"></script>
+  <script src="submissions.js"></script>
+
+</body>
+</html>
