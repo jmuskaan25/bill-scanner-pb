@@ -27,8 +27,7 @@ jobs:
           cat > config.js << 'SCRIPT'
           const CONFIG = {
             PB_URL: '${{ secrets.PB_URL }}',
-            GOOGLE_SHEET_URL: '${{ secrets.GOOGLE_SHEET_URL }}',
-            CLAUDE_API_KEY: '${{ secrets.CLAUDE_API_KEY }}'
+            GOOGLE_SHEET_URL: '${{ secrets.GOOGLE_SHEET_URL }}'
           };
           SCRIPT
 

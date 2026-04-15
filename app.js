@@ -211,45 +211,26 @@ function handleFileUpload(file) {
   reader.readAsDataURL(file);
 }
 
-// ---- Scan Bill with Claude API (direct browser call) ----
+// ---- Scan Bill via PocketBase proxy ----
 async function scanBill() {
   if (!currentFile || !currentBase64) return;
 
-  var mediaType = currentFile.type;
-  var contentBlocks = [
-    {
-      type: 'image',
-      source: {
-        type: 'base64',
-        media_type: mediaType,
-        data: currentBase64
-      }
-    },
-    {
-      type: 'text',
-      text: 'Extract the following fields from this cab/ride receipt image and return ONLY a JSON object (no markdown, no code fences):\n{\n  "provider": "Uber/Ola/Rapido/Auto/Other",\n  "rideId": "booking or trip ID",\n  "riderName": "passenger name",\n  "driverName": "driver name",\n  "vehicleNumber": "vehicle registration number",\n  "pickup": "pickup address",\n  "drop": "drop/destination address",\n  "date": "YYYY-MM-DD",\n  "totalAmount": 123.45,\n  "currency": "INR/USD/EUR/GBP",\n  "paymentMethod": "cash/upi/card"\n}\nIf a field is not found, use null. For totalAmount, use a number (not string). For date, use YYYY-MM-DD format.'
-    }
-  ];
-
   try {
-    var response = await fetch('https://api.anthropic.com/v1/messages', {
+    var response = await fetch(CONFIG.PB_URL + '/api/scan', {
       method: 'POST',
       headers: {
-        'x-api-key': CONFIG.CLAUDE_API_KEY,
-        'anthropic-version': '2023-06-01',
-        'content-type': 'application/json',
-        'anthropic-dangerous-direct-browser-access': 'true'
+        'Authorization': pb.authStore.token,
+        'content-type': 'application/json'
       },
       body: JSON.stringify({
-        model: 'claude-haiku-4-5-20251001',
-        max_tokens: 1024,
-        messages: [{ role: 'user', content: contentBlocks }]
+        image: currentBase64,
+        media_type: currentFile.type
       })
     });
 
     if (!response.ok) {
       var errBody = await response.text();
-      throw new Error('API error ' + response.status + ': ' + errBody);
+      throw new Error('Scan error ' + response.status + ': ' + errBody);
     }
 
     var result = await response.json();
