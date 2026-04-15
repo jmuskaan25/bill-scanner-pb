@@ -3,7 +3,7 @@
 // PocketBase Version
 // ============================================
 
-var pb = new PocketBase(CONFIG.PB_URL);
+var pb = new PocketBase(window.location.origin);
 
 // ---- DOM Refs ----
 var manageBody = document.getElementById('manageBody');

@@ -3,7 +3,7 @@
 // PocketBase Version
 // ============================================
 
-const pb = new PocketBase(CONFIG.PB_URL);
+const pb = new PocketBase(window.location.origin);
 
 // ---- State ----
 var currentFile = null;
@@ -216,7 +216,7 @@ async function scanBill() {
   if (!currentFile || !currentBase64) return;
 
   try {
-    var response = await fetch(CONFIG.PB_URL + '/api/scan', {
+    var response = await fetch('/api/scan', {
       method: 'POST',
       headers: {
         'Authorization': pb.authStore.token,

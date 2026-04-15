@@ -1,0 +1,20 @@
+app = "via-bill-scanner"
+primary_region = "sin"
+
+[build]
+dockerfile = "Dockerfile"
+
+[env]
+GOMEMLIMIT = "200MiB"
+
+[http_service]
+internal_port = 8080
+force_https = true
+
+[mounts]
+source = "pb_data"
+destination = "/app/pb_data"
+
+[[vm]]
+size = "shared-cpu-1x"
+memory = "256mb"
