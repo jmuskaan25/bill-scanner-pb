@@ -11,17 +11,23 @@ var toastContainer = document.getElementById('toastContainer');
 var signInWall = document.getElementById('signInWall');
 var wallSignInBtn = document.getElementById('wallSignInBtn');
 
-// Hide wall if already authed
-if (pb.authStore.isValid && signInWall) {
-  signInWall.style.display = 'none';
-}
-
 // ---- Auth Check & Load ----
-if (pb.authStore.isValid) {
-  loadRecentSubmissions();
-} else {
-  if (signInWall) signInWall.style.display = 'flex';
+async function init() {
+  if (pb.authStore.isValid) {
+    try {
+      await pb.collection('users').authRefresh();
+    } catch (e) {
+      pb.authStore.clear();
+      if (signInWall) signInWall.style.display = 'flex';
+      return;
+    }
+    if (signInWall) signInWall.style.display = 'none';
+    loadRecentSubmissions();
+  } else {
+    if (signInWall) signInWall.style.display = 'flex';
+  }
 }
+init();
 
 // Wall sign-in button
 wallSignInBtn.addEventListener('click', async function() {
@@ -57,12 +63,14 @@ async function loadRecentSubmissions() {
   submissionsBody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:32px;color:#9ca3af;">Loading...</td></tr>';
 
   try {
-    var userId = pb.authStore.record.id;
-    var records = await pb.collection('reimbursements').getList(1, 50, {
-      filter: 'user = "' + userId + '"',
-      sort: '-created'
+    var resp = await fetch('/api/my-reimbursements', {
+      headers: { 'Authorization': pb.authStore.token }
     });
-
+    if (!resp.ok) {
+      var errText = await resp.text();
+      throw new Error('HTTP ' + resp.status);
+    }
+    var records = await resp.json();
     var docs = records.items;
 
     if (docs.length === 0) {
@@ -80,15 +88,6 @@ async function loadRecentSubmissions() {
     docs.forEach(function(d) {
       var tr = document.createElement('tr');
 
-      // Submitted on (use PocketBase created timestamp)
-      var submittedAt = '--';
-      if (d.created) {
-        submittedAt = new Date(d.created).toLocaleDateString('en-IN', {
-          day: 'numeric', month: 'short', year: 'numeric'
-        });
-      }
-
-      // Ride date from the bill (ride_date is YYYY-MM-DD)
       var rideDate = '--';
       if (d.ride_date && /^\d{4}-\d{2}-\d{2}/.test(d.ride_date)) {
         rideDate = new Date(d.ride_date).toLocaleDateString('en-IN', {
@@ -106,7 +105,7 @@ async function loadRecentSubmissions() {
       var amount = d.total_amount != null ? symbol + Number(d.total_amount).toFixed(2) : '--';
 
       tr.innerHTML =
-        '<td style="white-space:nowrap;">' + escapeHtml(submittedAt) + '</td>' +
+        '<td style="white-space:nowrap;">' + escapeHtml(rideDate) + '</td>' +
         '<td>' + submittedByHtml + '</td>' +
         '<td>' + escapeHtml(d.provider || '--') + '</td>' +
         '<td style="white-space:nowrap;">' + escapeHtml(rideDate) + '</td>' +

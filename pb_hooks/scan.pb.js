@@ -4,7 +4,7 @@
 routerAdd("POST", "/api/scan", (e) => {
   const body = e.requestInfo().body;
   const base64Data = body.image;      // base64 string
-  const mediaType = body.media_type;  // e.g. "image/jpeg"
+  const mediaType = body.media_type;  // e.g. "image/jpeg" or "application/pdf"
 
   if (!base64Data || !mediaType) {
     return e.json(400, { error: "Missing image or media_type" });
@@ -13,6 +13,28 @@ routerAdd("POST", "/api/scan", (e) => {
   const apiKey = $os.getenv("CLAUDE_API_KEY");
   if (!apiKey) {
     return e.json(500, { error: "CLAUDE_API_KEY not configured on server" });
+  }
+
+  // Build the content block based on media type
+  let fileBlock;
+  if (mediaType === "application/pdf") {
+    fileBlock = {
+      type: "document",
+      source: {
+        type: "base64",
+        media_type: "application/pdf",
+        data: base64Data
+      }
+    };
+  } else {
+    fileBlock = {
+      type: "image",
+      source: {
+        type: "base64",
+        media_type: mediaType,
+        data: base64Data
+      }
+    };
   }
 
   const res = $http.send({
@@ -29,14 +51,7 @@ routerAdd("POST", "/api/scan", (e) => {
       messages: [{
         role: "user",
         content: [
-          {
-            type: "image",
-            source: {
-              type: "base64",
-              media_type: mediaType,
-              data: base64Data
-            }
-          },
+          fileBlock,
           {
             type: "text",
             text: 'Extract the following fields from this cab/ride receipt image and return ONLY a JSON object (no markdown, no code fences):\n{\n  "provider": "Uber/Ola/Rapido/Auto/Other",\n  "rideId": "booking or trip ID",\n  "riderName": "passenger name",\n  "driverName": "driver name",\n  "vehicleNumber": "vehicle registration number",\n  "pickup": "pickup address",\n  "drop": "drop/destination address",\n  "date": "YYYY-MM-DD",\n  "totalAmount": 123.45,\n  "currency": "INR/USD/EUR/GBP",\n  "paymentMethod": "cash/upi/card"\n}\nIf a field is not found, use null. For totalAmount, use a number (not string). For date, use YYYY-MM-DD format.'

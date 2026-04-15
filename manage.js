@@ -23,18 +23,26 @@ if (adminToggleBtn && adminPasswordField) {
   });
 }
 
-// Hide wall if already authed as admin
-if (pb.authStore.isValid && sessionStorage.getItem('via_admin') === '1' && signInWall) {
-  signInWall.style.display = 'none';
-  loadAllSubmissions();
-} else if (pb.authStore.isValid && sessionStorage.getItem('via_admin') !== '1') {
-  // Logged in but not admin — redirect
-  showToast('Admin access required.', 'error');
-  setTimeout(function() { window.location.href = 'index.html'; }, 1500);
-} else {
-  // Not logged in
-  if (signInWall) signInWall.style.display = 'flex';
+// ---- Auth Check ----
+async function init() {
+  if (pb.authStore.isValid && sessionStorage.getItem('via_admin') === '1') {
+    try {
+      await pb.collection('users').authRefresh();
+    } catch (e) {
+      pb.authStore.clear();
+      if (signInWall) signInWall.style.display = 'flex';
+      return;
+    }
+    if (signInWall) signInWall.style.display = 'none';
+    loadAllSubmissions();
+  } else if (pb.authStore.isValid && sessionStorage.getItem('via_admin') !== '1') {
+    showToast('Admin access required.', 'error');
+    setTimeout(function() { window.location.href = 'index.html'; }, 1500);
+  } else {
+    if (signInWall) signInWall.style.display = 'flex';
+  }
 }
+init();
 
 // ---- Wall Sign-In Button ----
 wallSignInBtn.addEventListener('click', async function() {
@@ -84,7 +92,12 @@ async function loadAllSubmissions() {
   manageBody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:32px;color:#9ca3af;">Loading...</td></tr>';
 
   try {
-    var records = await pb.collection('reimbursements').getFullList({ sort: '-created' });
+    var resp = await fetch('/api/all-reimbursements', {
+      headers: { 'Authorization': pb.authStore.token }
+    });
+    if (!resp.ok) throw new Error('HTTP ' + resp.status);
+    var data = await resp.json();
+    var records = data.items;
 
     if (records.length === 0) {
       manageBody.innerHTML =
@@ -101,9 +114,9 @@ async function loadAllSubmissions() {
     records.forEach(function(d) {
       var tr = document.createElement('tr');
 
-      var submittedAt = '--';
-      if (d.created) {
-        submittedAt = new Date(d.created).toLocaleDateString('en-IN', {
+      var rideDate = '--';
+      if (d.ride_date && /^\d{4}-\d{2}-\d{2}/.test(d.ride_date)) {
+        rideDate = new Date(d.ride_date).toLocaleDateString('en-IN', {
           day: 'numeric', month: 'short', year: 'numeric'
         });
       }
@@ -120,7 +133,7 @@ async function loadAllSubmissions() {
       var status = d.status || 'pending';
 
       tr.innerHTML =
-        '<td style="white-space:nowrap;">' + escapeHtml(submittedAt) + '</td>' +
+        '<td style="white-space:nowrap;">' + escapeHtml(rideDate) + '</td>' +
         '<td>' + submittedByHtml + '</td>' +
         '<td>' + escapeHtml(d.provider || '--') + '</td>' +
         '<td>' + escapeHtml(d.pickup || '--') + '</td>' +
@@ -146,7 +159,15 @@ async function loadAllSubmissions() {
 
         e.target.disabled = true;
         try {
-          await pb.collection('reimbursements').update(recordId, { status: newStatus });
+          var resp = await fetch('/api/reimbursements/' + recordId + '/status', {
+            method: 'PATCH',
+            headers: {
+              'Authorization': pb.authStore.token,
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ status: newStatus })
+          });
+          if (!resp.ok) throw new Error('HTTP ' + resp.status);
           e.target.dataset.current = newStatus;
           e.target.className = 'status-select status-' + newStatus;
           showToast('Updated to ' + newStatus, 'success');
