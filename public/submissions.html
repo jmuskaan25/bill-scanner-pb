@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Submissions - Pronto Travel</title>
+  <link rel="stylesheet" href="styles.css?v=6">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🚕</text></svg>">
+</head>
+<body>
+
+  <!-- Sign-In Wall -->
+  <div id="signInWall" class="signin-wall" style="display:flex; position:fixed; inset:0; z-index:9999; background:#f9fafb; align-items:center; justify-content:center;">
+    <div class="signin-card">
+      <span class="signin-logo">🚕</span>
+      <h1>Pronto Travel</h1>
+      <p class="subtitle">Sign in to view your submissions</p>
+
+      <div id="phoneStep">
+        <input type="tel" id="phoneInput" placeholder="+91XXXXXXXXXX" class="admin-password-input" style="width:100%;margin-bottom:12px;">
+        <button id="sendOtpBtn" class="google-btn" style="width:100%;">Send OTP</button>
+      </div>
+
+      <div id="otpStep" style="display:none;">
+        <p style="font-size:14px;color:#6b7280;margin-bottom:12px;">
+          Code sent to <strong id="otpPhoneSpan"></strong>
+        </p>
+        <input type="text" id="otpInput" placeholder="6-digit code" maxlength="6"
+               class="admin-password-input" inputmode="numeric" style="width:100%;margin-bottom:12px;letter-spacing:0.2em;text-align:center;">
+        <button id="verifyOtpBtn" class="google-btn" style="width:100%;">Verify</button>
+        <button id="backToPhoneBtn" type="button" class="admin-toggle-btn" style="margin-top:8px;">
+          Use a different number
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Header -->
+  <header class="header">
+    <div class="header-content">
+      <a href="index.html" class="btn-back">← Back</a>
+      <span class="header-logo">🚕</span>
+      <div>
+        <div class="header-title">My Submissions</div>
+        <div class="header-subtitle">Your cab reimbursements</div>
+      </div>
+      <div class="header-actions"></div>
+    </div>
+  </header>
+
+  <div class="container">
+    <div class="card">
+      <div class="card-header">
+        <span class="icon">📊</span>
+        <h2>My Submissions</h2>
+      </div>
+      <div class="card-body" style="padding: 0;">
+        <div class="submissions-table-wrapper">
+          <table class="submissions-table" id="submissionsTable">
+            <thead>
+              <tr>
+                <th>Submitted On</th>
+                <th>Submitted By</th>
+                <th>Provider</th>
+                <th>Ride Date</th>
+                <th>From</th>
+                <th>To</th>
+                <th>Amount</th>
+              </tr>
+            </thead>
+            <tbody id="submissionsBody">
+              <tr>
+                <td colspan="7">
+                  <div class="empty-state">
+                    <span class="empty-icon">📭</span>
+                    <p>No submissions yet. Upload a cab receipt to get started!</p>
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast-container" id="toastContainer"></div>
+  <script src="submissions.js"></script>
+
+</body>
+</html>

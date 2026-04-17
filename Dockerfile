@@ -1,19 +1,24 @@
-FROM alpine:3.19
+FROM python:3.12-slim
 
-ARG PB_VERSION=0.36.9
+WORKDIR /app
 
-RUN apk add --no-cache ca-certificates unzip
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    libpq-dev \
+    gcc \
+    && rm -rf /var/lib/apt/lists/*
 
-ADD https://github.com/pocketbase/pocketbase/releases/download/v${PB_VERSION}/pocketbase_${PB_VERSION}_linux_amd64.zip /tmp/pb.zip
-RUN unzip /tmp/pb.zip -d /app/ && rm /tmp/pb.zip
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
 
-COPY pb_hooks/ /app/pb_hooks/
-COPY index.html styles.css app.js submissions.js manage.js submissions.html manage.html /app/public/
+COPY . .
+
+# Collect Django admin static files (dummy env vars so settings can import cleanly)
+RUN SECRET_KEY=build-only \
+    DATABASE_URL=sqlite:///dummy.db \
+    REDIS_URL=redis://localhost \
+    CLAUDE_API_KEY=x \
+    python manage.py collectstatic --noinput
 
 EXPOSE 8080
 
-CMD ["/app/pocketbase", "serve", \
-     "--http=0.0.0.0:8080", \
-     "--dir=/app/pb_data", \
-     "--hooksDir=/app/pb_hooks", \
-     "--publicDir=/app/public"]
+CMD ["gunicorn", "pronto.wsgi:application", "--bind", "0.0.0.0:8080", "--workers", "2", "--timeout", "120"]
