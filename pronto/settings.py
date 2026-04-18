@@ -117,6 +117,7 @@ STATIC_ROOT = BASE_DIR / 'staticfiles'
 
 # WhiteNoise: serve public/ directory at the URL root (index.html, app.js, styles.css, etc.)
 WHITENOISE_ROOT = BASE_DIR / 'public'
+WHITENOISE_INDEX_FILE = True  # serve index.html at /
 
 # Media files (uploaded receipts)
 MEDIA_URL = '/media/'
