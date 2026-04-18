@@ -1,34 +1,25 @@
+# fly.toml app configuration file generated for via-bill-scanner on 2026-04-15T19:27:18+05:30
+#
+# See https://fly.io/docs/reference/configuration/ for information about how to use this file.
+#
+
 app = 'via-bill-scanner'
 primary_region = 'sin'
 
 [build]
   dockerfile = 'Dockerfile'
 
-[deploy]
-  release_command = "python manage.py migrate --noinput"
+[env]
+  GOMEMLIMIT = '200MiB'
 
-[processes]
-  web = "gunicorn pronto.wsgi:application --bind 0.0.0.0:8080 --workers 2 --timeout 120"
-  worker = "celery -A pronto worker --loglevel=info --concurrency=2"
+[[mounts]]
+  source = 'pb_data'
+  destination = '/app/pb_data'
 
 [http_service]
   internal_port = 8080
   force_https = true
-  auto_stop_machines = true
-  auto_start_machines = true
-  processes = ["web"]
-
-[[mounts]]
-  source = "bill_scanner_media"
-  destination = "/app/media"
-  processes = ["web"]
 
 [[vm]]
-  size = "shared-cpu-1x"
-  memory = "512mb"
-  processes = ["web"]
-
-[[vm]]
-  size = "shared-cpu-1x"
-  memory = "256mb"
-  processes = ["worker"]
+  size = 'shared-cpu-1x'
+  memory = '256mb'
